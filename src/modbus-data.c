@@ -31,7 +31,7 @@
   #include <libkern/OSByteOrder.h>
   #define bswap_16 OSSwapInt16
   #define bswap_32 OSSwapInt32
-   #define bswap_64 OSSwapInt64
+  #define bswap_64 OSSwapInt64
 #endif
 
 #if defined(__GNUC__)
@@ -41,6 +41,10 @@
 #    undef bswap_32
 #    define bswap_32 __builtin_bswap32
 #  endif
+#  if GCC_VERSION >= 480
+#    undef bswap_16
+#    define bswap_16 __builtin_bswap16
+#  endif
 #endif
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 # define bswap_32 _byteswap_ulong
@@ -48,7 +52,7 @@
 #endif
 
 #if !defined(bswap_16)
-#   warning "Fallback on C functions for bswap_16"
+#  warning "Fallback on C functions for bswap_16"
 static inline uint16_t bswap_16(uint16_t x)
 {
     return (x >> 8) | (x << 8);
@@ -56,7 +60,7 @@ static inline uint16_t bswap_16(uint16_t x)
 #endif
 
 #if !defined(bswap_32)
-#   warning "Fallback on C functions for bswap_32"
+#  warning "Fallback on C functions for bswap_32"
 static inline uint32_t bswap_32(uint32_t x)
 {
     return (bswap_16(x & 0xffff) << 16) | (bswap_16(x >> 16));

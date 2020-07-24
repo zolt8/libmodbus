@@ -1,7 +1,7 @@
 /*
  * Copyright © 2001-2011 Stéphane Raimbault <stephane.raimbault@gmail.com>
  *
- * SPDX-License-Identifier: LGPL-2.1+
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #include <stdio.h>
@@ -82,9 +82,8 @@ static const uint8_t table_crc_lo[] = {
 };
 
 /* Builds a RTU request header */
-static int _modbus_rtu_build_request_basis(modbus_t *ctx, int function,
-                                           int addr, int nb,
-                                           uint8_t *req)
+static int _modbus_rtu_build_request_basis(modbus_t *ctx, int function, int addr,
+        int nb, uint8_t *req)
 {
     assert(ctx->slave != -1);
     req[0] = ctx->slave;
@@ -115,7 +114,8 @@ static uint16_t crc16(uint8_t *buffer, uint16_t buffer_length)
     unsigned int i; /* will index into CRC lookup */
 
     /* pass through message buffer */
-    while (buffer_length--) {
+    while (buffer_length--)
+    {
         i = crc_hi ^ *buffer++; /* calculate the CRC  */
         crc_hi = crc_lo ^ table_crc_hi[i];
         crc_lo = table_crc_lo[i];
@@ -144,7 +144,7 @@ static int _modbus_rtu_send_msg_pre(uint8_t *req, int req_length)
    message length if the CRC is valid. Otherwise it shall return -1 and set
    errno to EMBADCRC. */
 static int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg,
-                                       const int msg_length)
+        const int msg_length)
 {
     uint16_t crc_calculated;
     uint16_t crc_received;
@@ -152,8 +152,10 @@ static int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg,
 
     /* Filter on the Modbus unit identifier (slave) in RTU mode to avoid useless
      * CRC computing. */
-    if (slave != ctx->slave && slave != MODBUS_BROADCAST_ADDRESS) {
-        if (ctx->debug) {
+    if (slave != ctx->slave && slave != MODBUS_BROADCAST_ADDRESS)
+    {
+        if (ctx->debug)
+        {
             printf("Request for slave %d ignored (not %d)\n", slave, ctx->slave);
         }
         /* Following call to check_confirmation handles this error */
@@ -164,15 +166,20 @@ static int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg,
     crc_received = (msg[msg_length - 2] << 8) | msg[msg_length - 1];
 
     /* Check CRC of msg */
-    if (crc_calculated == crc_received) {
+    if (crc_calculated == crc_received)
+    {
         return msg_length;
-    } else {
-        if (ctx->debug) {
+    }
+    else
+    {
+        if (ctx->debug)
+        {
             fprintf(stderr, "ERROR CRC received 0x%0X != CRC calculated 0x%0X\n",
                     crc_received, crc_calculated);
         }
 
-        if (ctx->error_recovery & MODBUS_ERROR_RECOVERY_PROTOCOL) {
+        if (ctx->error_recovery & MODBUS_ERROR_RECOVERY_PROTOCOL)
+        {
             _modbus_serial_flush(ctx);
         }
         errno = EMBBADCRC;
@@ -180,37 +187,29 @@ static int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg,
     }
 }
 
-static void _modbus_rtu_free(modbus_t *ctx) {
-  _modbus_serial_free(ctx->backend_data);
-  free(ctx->backend_data);
-  free(ctx);
+
+
+static void _modbus_rtu_free(modbus_t *ctx)
+{
+	_modbus_serial_free(ctx->backend_data);
+    free(ctx);
 }
 
-const modbus_backend_t _modbus_rtu_backend = {
-    _MODBUS_BACKEND_TYPE_SERIAL,
-    _MODBUS_RTU_HEADER_LENGTH,
-    _MODBUS_RTU_CHECKSUM_LENGTH,
-    MODBUS_RTU_MAX_ADU_LENGTH,
-    _modbus_serial_set_slave,
-    _modbus_rtu_build_request_basis,
-    _modbus_rtu_build_response_basis,
-    _modbus_rtu_prepare_response_tid,
-    _modbus_rtu_send_msg_pre,
-    _modbus_serial_send,
-    _modbus_serial_receive,
-    _modbus_serial_recv,
-    _modbus_rtu_check_integrity,
-    _modbus_serial_pre_check_confirmation,
-    _modbus_serial_connect,
-    _modbus_serial_close,
-    _modbus_serial_flush,
-    _modbus_serial_select,
-    _modbus_rtu_free
-};
+const modbus_backend_t _modbus_rtu_backend =
+{ _MODBUS_BACKEND_TYPE_SERIAL,
+_MODBUS_RTU_HEADER_LENGTH,
+_MODBUS_RTU_CHECKSUM_LENGTH,
+MODBUS_RTU_MAX_ADU_LENGTH, _modbus_serial_set_slave, _modbus_rtu_build_request_basis,
+        _modbus_rtu_build_response_basis, _modbus_rtu_prepare_response_tid,
+        _modbus_rtu_send_msg_pre, _modbus_serial_send, _modbus_serial_receive,
+        _modbus_serial_recv, _modbus_rtu_check_integrity,
+        _modbus_serial_pre_check_confirmation, _modbus_serial_connect,
+        _modbus_serial_close, _modbus_serial_flush, _modbus_serial_select,
+        _modbus_rtu_free };
 
-modbus_t* modbus_new_rtu(const char *device,
-                         int baud, char parity, int data_bit, int stop_bit)
+modbus_t* modbus_new_rtu(const char *device, int baud, char parity, int data_bit,
+        int stop_bit)
 {
-    return _modbus_serial_new(&_modbus_rtu_backend,
-                              device, baud, parity, data_bit, stop_bit);
+    return _modbus_serial_new(&_modbus_rtu_backend, device, baud, parity, data_bit,
+            stop_bit);
 }
